@@ -11,8 +11,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
-    - name: Build the Docker image
-      run: docker build . --file Dockerfile --tag minio-arm:latest
     - name: Build the arm32 image
       run: docker build . --file Dockerfile.arm32v7 --tag minio-arm:arm32v7
     - name: Build the arm64 image
