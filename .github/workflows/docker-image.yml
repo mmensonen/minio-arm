@@ -14,10 +14,12 @@ jobs:
     steps:
     - name: Checkout the code
       uses: actions/checkout@v4
+    # https://github.com/docker/setup-qemu-action
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v1
+    # https://github.com/docker/setup-buildx-action
     - name: Set up Docker Buildx
-      uses: crazy-max/ghaction-docker-buildx@v4
-      with:
-        version: latest
+      uses: docker/setup-buildx-action@v1
     - name: Prepare
       if: success()
       id: prepare
