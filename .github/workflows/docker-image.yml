@@ -1,17 +1,44 @@
-name: Docker Image CI
-
+name: Docker Build/Publish Image
 on:
   push:
-    branches: [ "master" ]
-  pull_request:
-    branches: [ "master" ]
-
+    branches: [ master ]
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      DOCKER_REGISTRY: docker.io
+      DOCKER_IMAGE: mmensonen/minio-arm
+      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+      DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+      DOCKER_TARGET_PLATFORM: linux/arm/v7
     steps:
-    - uses: actions/checkout@v4
-    - name: Build the arm32 image
-      run: docker build . --file Dockerfile.arm32v7 --tag minio-arm:arm32v7
-    - name: Build the arm64 image
-      run: docker build . --file Dockerfile.arm64v8 --tag minio-arm:arm64v8
+    - name: Checkout the code
+      uses: actions/checkout@v4
+    - name: Set up Docker Buildx
+      uses: crazy-max/ghaction-docker-buildx@v4
+      with:
+        version: latest
+    - name: Prepare
+      if: success()
+      id: prepare
+      run: |
+        echo ::set-output name=docker_platform::${DOCKER_TARGET_PLATFORM}
+        echo ::set-output name=docker_image::${DOCKER_REGISTRY}/${DOCKER_IMAGE}
+        echo ::set-output name=version::${GITHUB_RUN_NUMBER}
+    - name: Docker Login
+      if: success()
+      run: |
+        echo "${DOCKER_PASSWORD}" | docker login ${DOCKER_REGISTRY} --username "${DOCKER_USERNAME}" --password-stdin
+    - name: Run Buildx (push image)
+      if: success()
+      run: |
+        docker buildx build \
+        --platform ${{ steps.prepare.outputs.docker_platform }} \
+        --tag ${{ steps.prepare.outputs.docker_image }}:latest \
+        --file ./Dockerfile \
+        --output type=image,push=true . && \
+        docker buildx build \
+        --platform ${{ steps.prepare.outputs.docker_platform }} \
+        --tag ${{ steps.prepare.outputs.docker_image }}:arm32v7 \
+        --file ./Dockerfile.arm32v7 \
+        --output type=image,push=true .
