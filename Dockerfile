@@ -1,6 +1,6 @@
 FROM arm32v7/alpine
 
-RUN apk add --update curl && rm -rf /var/cache/apk/*
+RUN apk update && apk upgrade && apk add curl && rm -rf /var/cache/apk/*
 
 RUN curl --silent --show-error --fail --location \
 	--header "Accept: application/tar+gzip, application/x-gzip, application/octet-stream" -o /usr/bin/minio \
